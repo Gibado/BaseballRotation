@@ -9,6 +9,9 @@ document.RotationController = function(model) {
         document.getElementById('addPlayerButton').onclick = function() {
             self.addPlayerToDisplay();
         };
+        document.getElementById('inningsButton').onclick = function() {
+            self.generateInnings();
+        };
     }
 
     // Makes the displayed roster match the roster in the model
@@ -40,28 +43,23 @@ document.RotationController = function(model) {
 
         var id = 'player' + self.playerCount;
 
-        var col = document.createElement('div');
-        col.className = 'col-auto';
+        var col = self.generateElement('div', 'col-auto');
         col.id = id;
-        var inputGroup = document.createElement('div');
-        inputGroup.className = 'input-group mb-3';
+        var inputGroup = self.generateElement('div', 'input-group mb-3');
 
-        var span = document.createElement('span');
+        var span = self.generateElement('span', 'input-group-text');
         span.textContent = 'Player ' + self.playerCount;
-        span.className = 'input-group-text';
 
-        var input = document.createElement('input');
+        var input = self.generateElement('input', 'form-control');
         input.type = 'text';
-        input.className = 'form-control';
         input.placeholder = "Player " + self.playerCount + "'s name";
         input.id = id + 'Name';
         if (!blank) {
             input.value = name;
         }
 
-        var button = document.createElement('button');
+        var button = self.generateElement('button', 'btn btn-outline-danger')
         button.type = 'button';
-        button.className = 'btn btn-outline-danger';
         button.id = id + 'Button';
         button.textContent = 'X';
         button.onclick = function() {
@@ -80,9 +78,92 @@ document.RotationController = function(model) {
         return col;
     }
 
+    // Updates the model with the roster on the page, calculates the innings, then displays them on the page
+    self.generateInnings = function() {
+        // Setup the model
+        self.model.reset();
+        self.updateModelRoster();
+        self.updateInningCount();
+
+        // calculate innings
+        self.model.fillInnings();
+
+        // display innings
+        self.displayInnings(self.model.innings);
+    }
+
     // Makes the model roster match the displayed roster
     self.updateModelRoster = function() {
+        self.model.roster = [];
+        // Grab all the names
+        var inputs = $('input[id$=Name]').toArray();
+        inputs.forEach(function(input) {
+            self.model.addPlayer(input.value);
+        });
+    }
 
+    // Updates the model with how many innings to create
+    self.updateInningCount = function() {
+        var inningValue = parseInt($('#inningsCount')[0].value);
+        if (inningValue != NaN) {
+            self.model.inningCount = inningValue;
+        }
+    }
+
+    // Displays innings to the user
+    self.displayInnings = function(innings) {
+        //var output = self.textInnings(innings);
+        var output = self.cardInnings(innings);
+        $('#innings').append(output);
+    }
+
+    self.textInnings = function(innings) {
+        var results = [];
+        innings.forEach(function(inning) {
+            var row = self.generateElement('div', 'row');
+            var text = document.createElement('p');
+            text.textContent = JSON.stringify(inning);
+            row.append(text);
+            results.push(row);
+        });
+        return results;
+    }
+
+    self.cardInnings = function(innings) {
+        var results = [];
+        var inningCount = 1;
+        innings.forEach(function(inning) {
+            var col = self.generateElement('div', 'col-auto');
+            var card = self.generateElement('div', 'card');
+            var cardHeader = self.generateElement('div', 'card-header');
+            cardHeader.textContent = 'Inning #' + inningCount++;
+            var cardbody = self.generateElement('div', 'card-body');
+
+            var list = self.generateElement('dl', 'row');
+            inning.forEach(function(position) {
+                var title = self.generateElement('dt', 'col-3');
+                title.textContent = position.position + ":";
+                var player = self.generateElement('dd', 'col-auto');
+                player.textContent = position.player.name;
+
+                list.append(title, player);
+            });
+
+            cardbody.append(list);
+
+            card.append(cardHeader, cardbody);
+            col.append(card);
+            results.push(col);
+        });
+        return results;
+    }
+
+    // Creates a DOM element with the desired classes
+    // Meant to cut down on extra lines.  There's probably a better way to do this.
+    self.generateElement = function(name, classes) {
+        var element = document.createElement(name);
+        element.className = classes;
+        return element;
     }
 
     // Attach after the page has loaded
