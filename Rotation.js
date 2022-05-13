@@ -11,6 +11,7 @@ document.Rotation = function() {
     // Resets this object to a new state
     self.reset = function() {
         self.roster = [];
+        self.innings = [];
     }
 
     // Creates a player object
